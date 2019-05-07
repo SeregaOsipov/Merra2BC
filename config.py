@@ -1,42 +1,47 @@
-wrf_dir="/home/ukhova/Apps/WRF/V3.7.1/WRFV3.7.1/run_visuvi_tutorial/"
-wrf_input_file="wrfinput_d01"
-wrf_bdy_file="wrfbdy_d01"
+wrf_dir = "/project/k1090/osipovs/Data/AirQuality/AQABA/"
+wrf_input_file = "wrfinput_d01"
+wrf_bdy_file = "wrfbdy_d01"
 
-wrf_met_dir="/home/ukhova/Apps/WRF/V3.7.1/WRFV3.7.1/run_visuvi_tutorial/"
-wrf_met_files="met_em.d01.2010*"
+wrf_met_dir = "/project/k1090/osipovs/Data/AirQuality/AQABA/met_em/"
+wrf_met_files = "met_em.d01.2017-06*"
 
-mera_dir="/home/ukhova/Downloads/Merra2ForVISUVI_data/"
-mera_files="svc_MERRA2_300.inst3_3d_aer_Nv.2010*"
+# mera_files="svc_MERRA2_300.inst3_3d_aer_Nv.2010*"
 
-do_IC=True
-do_BC=True
+# mera_dir = "/project/k1090/osipovs/Data/NASA/MERRA2/inst3_3d_aer_Nv/"
+# mera_files = "MERRA2_400.inst3_3d_aer_Nv.201706*"
 
-#GOCART DUST ONLY
-spc_map = [ 'DUST_1 -> 1.0*[DU001];1.e9',
-            'DUST_2 -> 1.0*[DU002];1.e9',
-            'DUST_3 -> 1.0*[DU003];1.e9',
-            'DUST_4 -> 1.0*[DU004];1.e9',
-            'DUST_5 -> 1.0*[DU005];1.e9']
+mera_dir = "/project/k1090/osipovs/Data/NASA/MERRA2/inst3_3d_chm_Nv/"
+mera_files = "MERRA2_400.inst3_3d_chm_Nv.201706*"
 
-#GOCART FULL
-spc_map = [ 'DUST_1 -> 1.0*[DU001];1.e9',
-            'DUST_2 -> 1.0*[DU002];1.e9',
-            'DUST_3 -> 1.0*[DU003];1.e9',
-            'DUST_4 -> 1.0*[DU004];1.e9',
-            'DUST_5 -> 1.0*[DU005];1.e9',
-            'SEAS_1 -> 1.0*[SS002];1.e9',
-            'SEAS_2 -> 1.0*[SS003];1.e9',
-            'SEAS_3 -> 1.0*[SS004];1.e9',
-            'SEAS_4 -> 1.0*[SS005];1.e9',
-            'so2 -> 0.453*[SO2];1.e6',
-            'sulf -> 0.302*[SO4];1.e6',
-            'BC1 -> 0.4143*[BCPHOBIC];1.e9', 'BC2 -> 0.4143*[BCPHILIC];1.e9',
-            'OC1 -> 0.4143*[OCPHOBIC];1.e9', 'OC2 -> 0.4143*[OCPHILIC];1.e9',
-            'dms -> 0.467*[DMS];1.e6']
-            #,'msa -> 0.302*[MSA];1.e6'
+do_IC = True
+do_BC = True
 
-spc_map = [ 'o3 -> 0.604*[O3];1.e6','co -> 1*[CO];1.e6']
-#spc_map = [ 'so2 -> 0.453*[SO2];1.e6','sulf -> 0.302*[SO4];1.e6']
+# GOCART DUST ONLY
+spc_map = ['DUST_1 -> 1.0*[DU001];1.e9',
+           'DUST_2 -> 1.0*[DU002];1.e9',
+           'DUST_3 -> 1.0*[DU003];1.e9',
+           'DUST_4 -> 1.0*[DU004];1.e9',
+           'DUST_5 -> 1.0*[DU005];1.e9']
+
+# GOCART FULL
+spc_map = ['DUST_1 -> 1.0*[DU001];1.e9',
+           'DUST_2 -> 1.0*[DU002];1.e9',
+           'DUST_3 -> 1.0*[DU003];1.e9',
+           'DUST_4 -> 1.0*[DU004];1.e9',
+           'DUST_5 -> 1.0*[DU005];1.e9',
+           'SEAS_1 -> 1.0*[SS002];1.e9',
+           'SEAS_2 -> 1.0*[SS003];1.e9',
+           'SEAS_3 -> 1.0*[SS004];1.e9',
+           'SEAS_4 -> 1.0*[SS005];1.e9',
+           'so2 -> 0.453*[SO2];1.e6',
+           'sulf -> 0.302*[SO4];1.e6',
+           'BC1 -> 0.4143*[BCPHOBIC];1.e9', 'BC2 -> 0.4143*[BCPHILIC];1.e9',
+           'OC1 -> 0.4143*[OCPHOBIC];1.e9', 'OC2 -> 0.4143*[OCPHILIC];1.e9',
+           'dms -> 0.467*[DMS];1.e6']
+# ,'msa -> 0.302*[MSA];1.e6'
+
+spc_map = ['o3 -> 0.604*[O3];1.e6', 'co -> 1*[CO];1.e6']
+# spc_map = [ 'so2 -> 0.453*[SO2];1.e6','sulf -> 0.302*[SO4];1.e6']
 
 
 '''

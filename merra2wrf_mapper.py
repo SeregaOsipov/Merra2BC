@@ -10,7 +10,7 @@ def initialise():
 
     for a in config.spc_map:
         m=re.split('->|;',a)
-        #print m
+        #print(m)
         ar=re.findall(r'(-?\ *\.?[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?)\*\[?(\w+)\]?', m[1])
         #m=re.findall(r'(\w+) (\-\>)((-?\ *\.?[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?)\*\[?(\w+)\]?', a[0])
         #http://stackoverflow.com/questions/18152597/extract-scientific-number-from-string
@@ -25,15 +25,15 @@ def initialise():
             chem_map.update({r[1]:mylist})
         coefficients.update({m[0]:m[2]})
 
-    print "\nConversion MAP:"
+    print("\nConversion MAP:")
     for i in chem_map:
-        print i+":\t"+str(chem_map.get(i))
+        print(i+":\t"+str(chem_map.get(i)))
 
 
-    print "\nWRF multiplier MAP:"
+    print("\nWRF multiplier MAP:")
     for i in coefficients:
-        print i+":\t"+str(coefficients.get(i))
-    print "\n"
+        print(i+":\t"+str(coefficients.get(i)))
+    print("\n")
 
 
 def get_list_of_wrf_spec_by_merra_var(name):
@@ -46,8 +46,8 @@ def get_wrf_vars():
     return coefficients.keys()
 
 #initialise()
-#print get_wrf_vars()
-#print get_merra_vars()
-#print "DU001="+str(get_list_of_wrf_spec_by_merra_name("DU001"))
+#print(get_wrf_vars())
+#print(get_merra_vars())
+#print("DU001="+str(get_list_of_wrf_spec_by_merra_name("DU001")))
 #for t in get_list_of_wrf_spec_by_merra_var("DU001"):
-#    print t[0]+" * "+str(t[1])
+#    print(t[0]+" * "+str(t[1]))
