@@ -3,15 +3,15 @@ wrf_input_file = "wrfinput_d01"
 wrf_bdy_file = "wrfbdy_d01"
 
 wrf_met_dir = "/project/k1090/osipovs/Data/AirQuality/AQABA/met_em/"
-wrf_met_files = "met_em.d01.2017-06*"
+wrf_met_files = "met_em.d01.2017-0*"
 
 # mera_files="svc_MERRA2_300.inst3_3d_aer_Nv.2010*"
 
 # mera_dir = "/project/k1090/osipovs/Data/NASA/MERRA2/inst3_3d_aer_Nv/"
-# mera_files = "MERRA2_400.inst3_3d_aer_Nv.201706*"
+# mera_files = "MERRA2_400.inst3_3d_aer_Nv.20170*"
 
 mera_dir = "/project/k1090/osipovs/Data/NASA/MERRA2/inst3_3d_chm_Nv/"
-mera_files = "MERRA2_400.inst3_3d_chm_Nv.201706*"
+mera_files = "MERRA2_400.inst3_3d_chm_Nv.20170*"
 
 do_IC = True
 do_BC = True
