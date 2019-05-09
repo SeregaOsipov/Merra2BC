@@ -10,18 +10,19 @@ zero = 1e-16
 fields_to_zero = ['o3', 'co', 'so2', 'sulf']
 
 # ---------------------------------------
-
-print("SETTING TO ZERO INITIAL CONDITIONS")
 # INITIAL CONDITIONS
-wrfinput = Dataset(config.wrf_dir + "/" + config.wrf_input_file, 'r+')
+nc_fp = config.wrf_dir + "/" + config.wrf_input_file
+print("SETTING TO ZERO INITIAL CONDITIONS in {}".format(nc_fp))
+wrfinput = Dataset(nc_fp, 'r+')
 for field in fields_to_zero:
     print("Setting to zero IC for ", field)
     wrfinput.variables[field][:] = zero
 wrfinput.close()
 
-print("\n\nSETTING TO ZERO BOUNDARY CONDITIONS AND TENDENCIES")
 # BOUNDARY CONDITIONS
-wrfbddy = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r+')
+nc_fp = config.wrf_dir + "/" + config.wrf_bdy_file
+print("\n\nSETTING TO ZERO BOUNDARY CONDITIONS AND TENDENCIES in {}".format(nc_fp))
+wrfbddy = Dataset(nc_fp, 'r+')
 for field in fields_to_zero:
     print("Setting to zero BC for ", field)
     wrfbddy.variables[field + "_BXS"][:] = zero

@@ -11,6 +11,14 @@ from netCDF4 import Dataset
 import numpy as np
 from datetime import datetime
 
+
+"""
+Steps:
+1. Run zero_fields.py first to zero out the IC and BC for specified chem species
+2. Run this file, which will increment the IC and BC by the values obtained from the MERRA2
+"""
+
+
 start_time = time.time()
 
 # modules initialisation
