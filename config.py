@@ -1,17 +1,22 @@
-wrf_dir = "/project/k1090/osipovs/Data/AirQuality/AQABA/"
+# SHAHEEN
+root_path = '/project/k1090/osipovs'
+# MISTRAL
+root_path = '/work/mm0062/b302074'
+
+wrf_dir = root_path + "/Data/AirQuality/AQABA/chem_106"
 wrf_input_file = "wrfinput_d01"
 wrf_bdy_file = "wrfbdy_d01"
 
-wrf_met_dir = "/project/k1090/osipovs/Data/AirQuality/AQABA/met_em/"
+wrf_met_dir = root_path + "/Data/AirQuality/AQABA/met_em/"
 wrf_met_files = "met_em.d01.2017-0*"
 
 # mera_files="svc_MERRA2_300.inst3_3d_aer_Nv.2010*"
 
-# mera_dir = "/project/k1090/osipovs/Data/NASA/MERRA2/inst3_3d_aer_Nv/"
-# mera_files = "MERRA2_400.inst3_3d_aer_Nv.20170*"
+mera_dir = root_path + "/Data/NASA/MERRA2/inst3_3d_aer_Nv/"
+mera_files = "MERRA2_400.inst3_3d_aer_Nv.20170*"
 
-mera_dir = "/project/k1090/osipovs/Data/NASA/MERRA2/inst3_3d_chm_Nv/"
-mera_files = "MERRA2_400.inst3_3d_chm_Nv.20170*"
+# mera_dir = root_path + "/Data/NASA/MERRA2/inst3_3d_chm_Nv/"
+# mera_files = "MERRA2_400.inst3_3d_chm_Nv.20170*"
 
 do_IC = True
 do_BC = True
@@ -40,8 +45,8 @@ spc_map = ['DUST_1 -> 1.0*[DU001];1.e9',
            'dms -> 0.467*[DMS];1.e6']
 # ,'msa -> 0.302*[MSA];1.e6'
 
-spc_map = ['o3 -> 0.604*[O3];1.e6', 'co -> 1*[CO];1.e6']
-# spc_map = [ 'so2 -> 0.453*[SO2];1.e6','sulf -> 0.302*[SO4];1.e6']
+spc_map = ['so2 -> 0.453*[SO2];1.e6', 'sulf -> 0.302*[SO4];1.e6']
+# spc_map = ['o3 -> 0.604*[O3];1.e6', 'co -> 1*[CO];1.e6']
 
 
 '''
