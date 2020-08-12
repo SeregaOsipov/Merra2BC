@@ -1,3 +1,5 @@
+import numpy as np
+
 # SHAHEEN
 root_path = '/project/k1090/osipovs'
 # MISTRAL
@@ -45,7 +47,18 @@ spc_map = ['DUST_1 -> 1.0*[DU001];1.e9',
            'dms -> 0.467*[DMS];1.e6']
 # ,'msa -> 0.302*[MSA];1.e6'
 
-spc_map = ['so2 -> 0.453*[SO2];1.e6', 'sulf -> 0.302*[SO4];1.e6']
+#spc_map = ['so2 -> 0.453*[SO2];1.e6', 'sulf -> 0.302*[SO4];1.e6']
+# spc_map = ['o3 -> 0.604*[O3];1.e6', 'co -> 1*[CO];1.e6']
+
+
+# chem_106 case (MADE SORGAM)
+# MADE aerosol scheme uses two parameters (0th and 3rd moments)
+# To prescribe aerosol we need to specify mass concentration (linked to 3rd moment) and number concentration (0th moment)
+# 3rd moment (mass) can be derived from MERRA2. For 0th moment (number concentration) I assumed fixed size.
+# See aerosol_parameters_for_MADE_IC_BC.py on details how to compute the mapping coefficient
+# put all sulfate into accumulation mode
+spc_map = ['ac0 -> 1.22*[SO4];1.e11', 'so4aj -> [SO4];1.e9']
+spc_map += ['so2 -> 0.453*[SO2];1.e6', ]
 # spc_map = ['o3 -> 0.604*[O3];1.e6', 'co -> 1*[CO];1.e6']
 
 

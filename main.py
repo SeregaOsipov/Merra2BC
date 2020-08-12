@@ -11,14 +11,12 @@ from netCDF4 import Dataset
 import numpy as np
 from datetime import datetime
 
-
 """
 Steps:
 1. Run zero_fields.py first to zero out the IC and BC for specified chem species
 2. Run this file, which will increment the IC and BC by the values obtained from the MERRA2
 3. Change config and run this file again to include SO2 and sulfate
 """
-
 
 start_time = time.time()
 
@@ -48,7 +46,7 @@ if ((min(wrf_module.wrf_bnd_lons) < min(merra2_module.mera_lon)) | (
 time_intersection = wrf_module.wrf_times.keys() & merra2_module.mera_times.keys()
 
 # check that merra2 time is covered by wrf time
-if (len(time_intersection) != len(wrf_module.wrf_times)):
+if len(time_intersection) != len(wrf_module.wrf_times):
     print('These datetimes are missing in MERRA2 dataset:')
     time_intersection = dict.fromkeys(time_intersection, 0)
     for key in wrf_module.wrf_times.keys():
@@ -69,15 +67,15 @@ for i in time_intersection:
 if config.do_IC:
     print("START INITIAL CONDITIONS")
     cur_time = time_intersection[0]
-    index_of_opened_mera_file = merra2_module.get_file_index_by_time(cur_time)
-    print("Opening mera file: " + merra2_module.get_file_name_by_index(
-        index_of_opened_mera_file) + " with initial time: " + cur_time)
-    print(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_mera_file))
-    merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_mera_file), 'r')
-    MERA_PRES = merra2_module.get_pressure_by_time(cur_time, merra_f)
+    index_of_opened_merra_file = merra2_module.get_file_index_by_time(cur_time)
+    print("Opening merra file: " + merra2_module.get_file_name_by_index(
+        index_of_opened_merra_file) + " with initial time: " + cur_time)
+    print(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_merra_file))
+    merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_merra_file), 'r')
+    MERRA_PRES = merra2_module.get_pressure_by_time(cur_time, merra_f)
 
     # Horizontal interpolation of Merra pressure on WRF horizontal grid
-    MER_HOR_PRES = merra2_module.hor_interpolate_3dfield_on_wrf_grid(MERA_PRES, wrf_module.ny, wrf_module.nx,
+    MER_HOR_PRES = merra2_module.hor_interpolate_3dfield_on_wrf_grid(MERRA_PRES, wrf_module.ny, wrf_module.nx,
                                                                      wrf_module.xlon, wrf_module.xlat)
 
     print("Opening metfile: " + wrf_module.get_met_file_by_time(cur_time))
@@ -111,7 +109,7 @@ if config.do_IC:
     print("Closing wrfintput: " + config.wrf_input_file)
     wrfinput_f.close()
 
-    print("Closing mera file " + merra2_module.get_file_name_by_index(index_of_opened_mera_file))
+    print("Closing mera file " + merra2_module.get_file_name_by_index(index_of_opened_merra_file))
     merra_f.close()
 
     print("Closing metfile " + wrf_module.get_met_file_by_time(cur_time))
@@ -130,28 +128,28 @@ if config.do_BC:
                                                                                            '%Y-%m-%d_%H:%M:%S')).total_seconds()
 
     cur_time = time_intersection[0]
-    index_of_opened_mera_file = merra2_module.get_file_index_by_time(cur_time)
+    index_of_opened_merra_file = merra2_module.get_file_index_by_time(cur_time)
     print("\nOpening MERRA2 file: " + merra2_module.get_file_name_by_index(
-        index_of_opened_mera_file) + " file which has index " + str(index_of_opened_mera_file))
-    merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_mera_file), 'r')
+        index_of_opened_merra_file) + " file which has index " + str(index_of_opened_merra_file))
+    merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_merra_file), 'r')
 
     for cur_time in time_intersection:
-        if (merra2_module.get_file_index_by_time(cur_time) != index_of_opened_mera_file):
-            print("Closing prev. opened MERRA2 file with index " + str(index_of_opened_mera_file))
+        if (merra2_module.get_file_index_by_time(cur_time) != index_of_opened_merra_file):
+            print("Closing prev. opened MERRA2 file with index " + str(index_of_opened_merra_file))
             merra_f.close()
 
-            index_of_opened_mera_file = merra2_module.get_file_index_by_time(cur_time)
+            index_of_opened_merra_file = merra2_module.get_file_index_by_time(cur_time)
             print("\nOpening MERRA2 file: " + merra2_module.get_file_name_by_index(
-                index_of_opened_mera_file) + " file which has index " + str(index_of_opened_mera_file))
-            merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_mera_file),
+                index_of_opened_merra_file) + " file which has index " + str(index_of_opened_merra_file))
+            merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_merra_file),
                               'r')
 
         print("\n\tCur_time=" + cur_time)
         print("\tReading MERRA Pressure at index " + str(merra2_module.get_index_in_file_by_time(cur_time)))
-        MERA_PRES = merra2_module.get_pressure_by_time(cur_time, merra_f)
+        MERRA_PRES = merra2_module.get_pressure_by_time(cur_time, merra_f)
 
         print("\tHorizontal interpolation of MERRA Pressure on WRF boundary")
-        MER_HOR_PRES_BND = merra2_module.hor_interpolate_3dfield_on_wrf_boubdary(MERA_PRES,
+        MER_HOR_PRES_BND = merra2_module.hor_interpolate_3dfield_on_wrf_boubdary(MERRA_PRES,
                                                                                  len(wrf_module.wrf_bnd_lons),
                                                                                  wrf_module.wrf_bnd_lons,
                                                                                  wrf_module.wrf_bnd_lats)
@@ -195,7 +193,7 @@ if config.do_BC:
 
         print("--- %s seconds ---" % (time.time() - start_time))
 
-    print("Closing prev. opened MERRA2 file with index " + str(index_of_opened_mera_file))
+    print("Closing prev. opened MERRA2 file with index " + str(index_of_opened_merra_file))
     merra_f.close()
 
     print("Closing " + config.wrf_bdy_file)
