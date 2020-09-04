@@ -7,6 +7,7 @@ start_time = time.time()
 
 zero = 1e-16
 fields_to_zero = ['o3', 'co', 'so2', 'sulf']
+fields_to_zero = ['so2', 'sulf', 'ac0', 'so4aj']
 
 # ---------------------------------------
 # INITIAL CONDITIONS
