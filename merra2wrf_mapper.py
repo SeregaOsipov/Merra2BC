@@ -2,8 +2,7 @@ import re
 import config
 
 # mapping between MERRA2 species and WRF species
-chem_map = {}  # merra to wrf spec map
-coefficients = {}  # wrf multiplier map
+pipe_to_process = []  # set of mapping rules from merra to wrf
 
 
 def initialise():
@@ -16,32 +15,19 @@ def initialise():
         m[0] = m[0].strip()
         m[2] = float(m[2])
         for r in ar:
-            mylist = chem_map.get(r[1])
-            if mylist == None:
-                mylist = []
-
-            mylist.append([m[0], float(r[0])])
-            chem_map.update({r[1]: mylist})
-        coefficients.update({m[0]: m[2]})
+            rule_vo = {}
+            rule_vo['merra_key'] = r[1]
+            rule_vo['wrf_key'] = m[0]
+            rule_vo['wrf_multiplier'] = float(r[0])
+            # TODO: this is reduntant field, should be moved to the coefficient
+            rule_vo['wrf_exponent'] = m[2]
+            pipe_to_process.append(rule_vo)
 
     print("\nConversion MAP:")
-    for i in chem_map:
-        print(i + ":\t" + str(chem_map.get(i)))
-
-    print("\nWRF multiplier MAP:")
-    for i in coefficients:
-        print(i + ":\t" + str(coefficients.get(i)))
-    print("\n")
+    for item in pipe_to_process:
+        print(str(item) + ":\t" )
 
 
 def get_list_of_wrf_spec_by_merra_var(name):
-    return chem_map.get(name)
-
-
-def get_merra_vars():
-    return chem_map.keys()
-
-
-def get_wrf_vars():
-    return coefficients.keys()
+    return pipe_to_process.get(name)
 
