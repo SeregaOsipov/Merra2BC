@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import config
 import time
 from netCDF4 import Dataset
@@ -7,7 +6,7 @@ start_time = time.time()
 
 zero = 1e-16
 fields_to_zero = ['o3', 'co', 'so2', 'sulf']
-fields_to_zero = ['so2', 'sulf', 'ac0', 'so4aj']
+fields_to_zero = ['ac0', 'corn', 'so4aj', 'soila', 'ecj', 'p25j', 'seas']
 
 # ---------------------------------------
 # INITIAL CONDITIONS
