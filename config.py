@@ -83,6 +83,9 @@ spc_map += ['ac0 -> 6.41*[OCPHOBIC]+6.41*[OCPHILIC];1.e11', 'orgpaj -> 1.0*[OCPH
 # spc_map += ['so2 -> 0.453*[SO2];1.e6', ]
 # spc_map = ['o3 -> 0.604*[O3];1.e6', 'co -> 1*[CO];1.e6']
 
+# TODO: add DMS
+#'dms -> 0.467*[DMS];1.e6']
+
 
 '''
 #CBMZ-MOSAIC_8bins  DUST only
