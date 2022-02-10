@@ -4,6 +4,9 @@ import os
 from netCDF4 import Dataset
 import numpy as np
 
+# THIS is the version of the file, that works with the merra2wrf.py
+# The copy exist to support submitted papers. But the new refactored coe should be use, i.e. EMAC2WRF
+
 met_files = []
 met_times_files = {}
 dates = {}
@@ -13,6 +16,7 @@ cen_lat = 0
 cen_lon = 0
 projection = ""
 
+spec_number = 0
 nx = ny = nz = nw = 0
 wrf_p_top = 0
 znu = []
@@ -78,7 +82,7 @@ def update_boundaries(WRF_SPECIE_BND, wrfbdy_f, name, index):
     wrfbdy_f.variables[name + "_BYE"][index, :] = wrfbdy_f.variables[name + "_BYE"][index, :] + wrfbye
 
 
-def update_tendency_boundaries(wrfbdy_f, name, index, dt):
+def update_tendency_boundaries(wrfbdy_f, name, index, dt, wrf_sp_index):
     if index > 0:
         print("\t\t\tUpdating Tendency BC for " + name)
         wrfbdy_f.variables[name + "_BTXS"][index - 1, :] = (wrfbdy_f.variables[name + "_BXS"][index, :] -
@@ -92,40 +96,41 @@ def update_tendency_boundaries(wrfbdy_f, name, index, dt):
 
 
 def initialise(config):
-    global met_files, dates, wrf_p_top, znu, xlon, xlat, nx, ny, nz, nw, boundary_lons, boundary_lats, vars, cen_lat, cen_lon, projection, dx, dy, true_lat2, true_lat1
+    global met_files, dates, wrf_p_top, znu, xlon, xlat, nx, ny, nz, nw, boundary_lons, boundary_lats, spec_number, vars, cen_lat, cen_lon, projection, dx, dy, true_lat2, true_lat1
 
-    met_files = sorted([f for f in os.listdir(config.wrf_met_dir) if re.match(config.wrf_met_files, f)], key=numericalSort1)
-    wrf_bdy_nc = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r')
-    for i in range(0, len(wrf_bdy_nc.variables['Times'][:]), 1):
+    met_files = sorted([f for f in os.listdir(config.wrf_met_dir) if re.match(config.wrf_met_files, f)],
+                       key=numericalSort1)
+    wrfbddy = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r')
+    for i in range(0, len(wrfbddy.variables['Times'][:]), 1):
         # wrf_times.update({''.join(wrfbddy.variables['Times'][i]):i})
-        date_string = ''.join([char.decode("utf-8") for char in wrf_bdy_nc.variables['Times'][i]])
-        dates.update({date_string: i})
+        date_string = ''.join([char.decode("utf-8") for char in wrfbddy.variables['Times'][i]])
+        wrf_times.update({date_string: i})
         met_times_files.update({date_string: met_files[i]})
 
-    nx = len(wrf_bdy_nc.dimensions['west_east'])
-    ny = len(wrf_bdy_nc.dimensions['south_north'])
-    nz = len(wrf_bdy_nc.dimensions['bottom_top'])
-    nw = len(wrf_bdy_nc.dimensions['bdy_width'])
-    wrf_bdy_nc.close()
+    nx = len(wrfbddy.dimensions['west_east'])
+    ny = len(wrfbddy.dimensions['south_north'])
+    nz = len(wrfbddy.dimensions['bottom_top'])
+    nw = len(wrfbddy.dimensions['bdy_width'])
+    wrfbddy.close()
 
     # Reading "PRESSURE TOP OF THE MODEL, PA" and "eta values on half (mass) levels"
-    wrfinput_nc = Dataset(config.wrf_dir + "/" + config.wrf_input, 'r')
-    wrf_p_top = wrfinput_nc.variables['P_TOP'][:]
-    znu = wrfinput_nc.variables['ZNU'][:]
-    xlon = wrfinput_nc.variables['XLONG'][0]
-    xlat = wrfinput_nc.variables['XLAT'][0]
-    vars = [var for var in wrfinput_nc.variables]
+    wrfinput = Dataset(config.wrf_dir + "/" + config.wrf_input, 'r')
+    wrf_p_top = wrfinput.variables['P_TOP'][:]
+    znu = wrfinput.variables['ZNU'][:]
+    xlon = wrfinput.variables['XLONG'][0]
+    xlat = wrfinput.variables['XLAT'][0]
+    vars = [var for var in wrfinput.variables]
 
-    projection = wrfinput_nc.getncattr('MAP_PROJ_CHAR')
-    cen_lat = wrfinput_nc.getncattr('CEN_LAT')
-    cen_lon = wrfinput_nc.getncattr('CEN_LON')
-    dy = wrfinput_nc.getncattr('DY')
-    dx = wrfinput_nc.getncattr('DX')
+    projection = wrfinput.getncattr('MAP_PROJ_CHAR')
+    cen_lat = wrfinput.getncattr('CEN_LAT')
+    cen_lon = wrfinput.getncattr('CEN_LON')
+    dy = wrfinput.getncattr('DY')
+    dx = wrfinput.getncattr('DX')
 
-    true_lat1 = wrfinput_nc.getncattr('TRUELAT1')
-    true_lat2 = wrfinput_nc.getncattr('TRUELAT2')
+    true_lat1 = wrfinput.getncattr('TRUELAT1')
+    true_lat2 = wrfinput.getncattr('TRUELAT2')
 
-    wrfinput_nc.close()
+    wrfinput.close()
 
     boundary_lons = np.concatenate((xlon[:, 0], xlon[ny - 1, :], xlon[:, nx - 1], xlon[0, :]), axis=0)
     boundary_lats = np.concatenate((xlat[:, 0], xlat[ny - 1, :], xlat[:, nx - 1], xlat[0, :]), axis=0)
@@ -136,3 +141,5 @@ def initialise(config):
 
     print("Lower left corner: lat=" + str(min(boundary_lats)) + " long=" + str(min(boundary_lons)))
     print("Upper right corner: lat=" + str(max(boundary_lats)) + " long=" + str(max(boundary_lons)))
+
+    spec_number = len(config.spc_map)

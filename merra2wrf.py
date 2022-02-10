@@ -1,65 +1,68 @@
-# It is OK to have duplicates in spc_map
-
-import config
 import time
 import merra2_module
 import wrf_module
 import merra2wrf_mapper
-import utils
 from netCDF4 import Dataset
 import numpy as np
 from datetime import datetime
+from emac2wrf.bc_ic_utils import is_child_domain_covered_by_parent_domain
+from emac2wrf.lexical_utils import parse_mapping_rules
+from merra2wrf_config import get_merra2wrf_config
 
 """
 Steps:
 1. Run zero_fields.py first to zero out the IC and BC for specified chem species
 2. Run this file, which will increment the IC and BC by the values obtained from the MERRA2
 3. Change config and run this file again to include SO2 and sulfate
+
+Notes:
+1. It is OK to have duplicates in spc_map
 """
 
 start_time = time.time()
 
 # modules initialisation
-wrf_module.initialise()
-merra2wrf_mapper.initialise()
-merra2_module.initialise()
+config = get_merra2wrf_config()
+wrf_module.initialise(config)
+merra2wrf_mapper.initialise(config)
+merra2_module.initialise(config)
 
-# -----------------------------
-# Sanity checks:
-# check species availability in wrf and in merra files
-for rule_vo in merra2wrf_mapper.pipe_to_process:
-    if rule_vo['merra_key'] not in merra2_module.merra_vars:
-        utils.error_message("Could not find variable " + rule_vo + " in MERRA2 file. Exiting...")
+pipe_to_process = parse_mapping_rules(config.spc_map)
+print("\nConversion MAP:")
+for item in pipe_to_process:
+    print(str(item) + ":\t" )
 
-for rule_vo in merra2wrf_mapper.pipe_to_process:
-    if rule_vo['wrf_key'] not in wrf_module.wrf_vars:
-        utils.error_message("Could not find variable " + rule_vo + " in WRF input file. Exiting...")
+#%% Sanity checks: check species availability in wrf and in merra files
+for rule_vo in pipe_to_process:
+    if rule_vo['merra_key'] not in merra2_module.vars:
+        raise Exception("Could not find variable " + rule_vo + " in MERRA2 file. Exiting...")
 
-# check that spatial dimensions are covered
-if ((min(wrf_module.wrf_bnd_lons) < min(merra2_module.mera_lon)) | (
-        max(wrf_module.wrf_bnd_lons) > max(merra2_module.mera_lon)) | (
-        min(wrf_module.wrf_bnd_lats) < min(merra2_module.mera_lat)) | (
-        max(wrf_module.wrf_bnd_lats) > max(merra2_module.mera_lat))):
-    utils.error_message("WRF area is not fully covered by MERRA2 area. Exiting...")
+for rule_vo in pipe_to_process:
+    if rule_vo['wrf_key'] not in wrf_module.vars:
+        raise Exception("Could not find variable " + rule_vo + " in WRF input file. Exiting...")
 
-time_intersection = wrf_module.wrf_times.keys() & merra2_module.mera_times.keys()
+# check domain coverage
+if not is_child_domain_covered_by_parent_domain(merra2_module, wrf_module):
+    raise Exception("Child domain (WRF) is not fully covered by Parent domain (MERRA2)")
+
+time_intersection = wrf_module.dates.keys() & merra2_module.mera_times.keys()
+print("\nTimes for processing: {}".format(time_intersection))
 
 # check that merra2 time is covered by wrf time
-if len(time_intersection) != len(wrf_module.wrf_times):
+if len(time_intersection) != len(wrf_module.dates):
     print('These datetimes are missing in MERRA2 dataset:')
     time_intersection = dict.fromkeys(time_intersection, 0)
-    for key in wrf_module.wrf_times.keys():
+    for key in wrf_module.dates.keys():
         if not key in time_intersection:
             print(key)
-    utils.error_message("WRF time range is not fully covered by MERRA2 time range. Exiting...")
+    error_message("WRF time range is not fully covered by MERRA2 time range. Exiting...")
 
-# -----------------------------
 # sorting times for processing
 time_intersection = sorted(time_intersection, key=lambda x: time.mktime(time.strptime(x, "%Y-%m-%d_%H:%M:%S")))
-
 print("\nTimes for processing: {}".format(time_intersection))
 # exit()
 
+#%% IC
 if config.do_IC:
     print("START INITIAL CONDITIONS")
     cur_time = time_intersection[0]
@@ -78,8 +81,8 @@ if config.do_IC:
     metfile = Dataset(config.wrf_met_dir + "/" + wrf_module.get_met_file_by_time(cur_time), 'r')
     WRF_PRES = wrf_module.get_pressure_from_metfile(metfile)
 
-    print("Opening wrfintput: " + config.wrf_input_file)
-    wrfinput_f = Dataset(config.wrf_dir + "/" + config.wrf_input_file, 'r+')
+    print("Opening wrfintput: " + config.wrf_input)
+    wrfinput_f = Dataset(config.wrf_dir + "/" + config.wrf_input, 'r+')
 
     for rule_vo in merra2wrf_mapper.pipe_to_process:
         print("\t\t - Reading " + rule_vo['merra_key'] + " field from Merra2.")
@@ -95,10 +98,11 @@ if config.do_IC:
         WRF_SPECIE = np.flipud(WRF_SPECIE)
 
         wrf_key = rule_vo['wrf_key']
-        print("\t\t - Updating wrfinput field {}[0] += {} * {} * {:.1e}".format(wrf_key, rule_vo['merra_key'], rule_vo['wrf_multiplier'], rule_vo['wrf_exponent']))
+        print("\t\t - Updating wrfinput field {}[0] += {} * {} * {:.1e}".format(wrf_key, rule_vo['merra_key'], rule_vo['wrf_multiplier'],
+                                                                                rule_vo['wrf_exponent']))
         wrfinput_f.variables[wrf_key][0, :] = wrfinput_f.variables[wrf_key][0, :] + WRF_SPECIE * rule_vo['wrf_multiplier'] * rule_vo['wrf_exponent']
 
-    print("Closing wrfintput: " + config.wrf_input_file)
+    print("Closing wrfintput: " + config.wrf_input)
     wrfinput_f.close()
 
     print("Closing mera file " + merra2_module.get_file_name_by_index(index_of_opened_merra_file))
@@ -109,15 +113,15 @@ if config.do_IC:
 
     print("FINISH INITIAL CONDITIONS")
 
+#%% BC
 if config.do_BC:
     print("\n\nSTART BOUNDARY CONDITIONS")
 
     print("Opening " + config.wrf_bdy_file)
     wrfbdy_f = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r+')
 
-    # difference betweeen two given times
-    dt = (datetime.strptime(time_intersection[1], '%Y-%m-%d_%H:%M:%S') - datetime.strptime(time_intersection[0],
-                                                                                           '%Y-%m-%d_%H:%M:%S')).total_seconds()
+    # difference between two given times
+    dt = (datetime.strptime(time_intersection[1], '%Y-%m-%d_%H:%M:%S') - datetime.strptime(time_intersection[0], '%Y-%m-%d_%H:%M:%S')).total_seconds()
 
     cur_time = time_intersection[0]
     index_of_opened_merra_file = merra2_module.get_file_index_by_time(cur_time)
@@ -133,8 +137,7 @@ if config.do_BC:
             index_of_opened_merra_file = merra2_module.get_file_index_by_time(cur_time)
             print("\nOpening MERRA2 file: " + merra2_module.get_file_name_by_index(
                 index_of_opened_merra_file) + " file which has index " + str(index_of_opened_merra_file))
-            merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_merra_file),
-                              'r')
+            merra_f = Dataset(config.mera_dir + "/" + merra2_module.get_file_name_by_index(index_of_opened_merra_file), 'r')
 
         print("\n\tCur_time=" + cur_time)
         print("\tReading MERRA Pressure at index " + str(merra2_module.get_index_in_file_by_time(cur_time)))
@@ -142,9 +145,9 @@ if config.do_BC:
 
         print("\tHorizontal interpolation of MERRA Pressure on WRF boundary")
         MER_HOR_PRES_BND = merra2_module.hor_interpolate_3dfield_on_wrf_boubdary(MERRA_PRES,
-                                                                                 len(wrf_module.wrf_bnd_lons),
-                                                                                 wrf_module.wrf_bnd_lons,
-                                                                                 wrf_module.wrf_bnd_lats)
+                                                                                 len(wrf_module.boundary_lons),
+                                                                                 wrf_module.boundary_lons,
+                                                                                 wrf_module.boundary_lats)
 
         print("\tReading WRF Pressure from: " + wrf_module.get_met_file_by_time(cur_time))
         metfile = Dataset(config.wrf_met_dir + "/" + wrf_module.get_met_file_by_time(cur_time), 'r')
@@ -154,7 +157,7 @@ if config.do_BC:
         metfile.close()
 
         time_index = wrf_module.get_index_in_file_by_time(cur_time)
-        for rule_vo in merra2wrf_mapper.pipe_to_process:
+        for rule_vo in pipe_to_process:
             merra_key = rule_vo['merra_key']
             wrf_key = rule_vo['wrf_key']
             print("\n\t\t - Reading " + merra_key + " field from MERRA.")
@@ -162,27 +165,28 @@ if config.do_BC:
 
             print("\t\tHorizontal interpolation of " + merra_key + " on WRF boundary")
             MER_HOR_SPECIE_BND = merra2_module.hor_interpolate_3dfield_on_wrf_boubdary(MER_SPECIE,
-                                                                                       len(wrf_module.wrf_bnd_lons),
-                                                                                       wrf_module.wrf_bnd_lons,
-                                                                                       wrf_module.wrf_bnd_lats)
+                                                                                       len(wrf_module.boundary_lons),
+                                                                                       wrf_module.boundary_lons,
+                                                                                       wrf_module.boundary_lats)
 
             print("\t\tVertical interpolation of " + merra_key + " on WRF boundary")
             WRF_SPECIE_BND = merra2_module.ver_interpolate_3dfield_on_wrf_boubdary(MER_HOR_SPECIE_BND, MER_HOR_PRES_BND,
                                                                                    WRF_PRES_BND, wrf_module.nz,
-                                                                                   len(wrf_module.wrf_bnd_lons))
+                                                                                   len(wrf_module.boundary_lons))
             WRF_SPECIE_BND = np.flipud(WRF_SPECIE_BND)
 
-            print("\t\t - Updating wrfbdy field: {}[{}] += {} * {} * {:.1e}".format(wrf_key, time_index, merra_key, rule_vo['wrf_multiplier'], rule_vo['wrf_exponent']))
+            print("\t\t - Updating wrfbdy field: {}[{}] += {} * {} * {:.1e}".format(wrf_key, time_index, merra_key, rule_vo['wrf_multiplier'],
+                                                                                    rule_vo['wrf_exponent']))
             wrf_module.update_boundaries(WRF_SPECIE_BND * rule_vo['wrf_multiplier'] * rule_vo['wrf_exponent'], wrfbdy_f, wrf_key, time_index)
 
         unique_wrf_keys = []
-        for vo in merra2wrf_mapper.pipe_to_process:
-            if vo['wrf_key'] not in unique_wrf_keys:
-                unique_wrf_keys.append(vo['wrf_key'])
+        for rule_vo in pipe_to_process:
+            if rule_vo['wrf_key'] not in unique_wrf_keys:
+                unique_wrf_keys.append(rule_vo['wrf_key'])
 
         wrf_sp_index = 0
         for wrf_key in unique_wrf_keys:
-            wrf_module.update_tendency_boundaries(wrfbdy_f, wrf_key, time_index, dt, wrf_sp_index)
+            wrf_module.update_tendency_boundaries(wrfbdy_f, wrf_key, time_index, dt)
             wrf_sp_index = wrf_sp_index + 1
 
         print("--- %s seconds ---" % (time.time() - start_time))
@@ -195,4 +199,5 @@ if config.do_BC:
 
     print("FINISH BOUNDARY CONDITIONS")
 
+#%% time stats
 print("--- %s seconds ---" % (time.time() - start_time))
