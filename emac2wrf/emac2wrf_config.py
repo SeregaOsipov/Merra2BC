@@ -16,6 +16,10 @@ def get_emac2wrf_mapping():
     chem_100 case (MADE SORGAM)
     Prescribe the organic aerosols from EMAC
     See aerosol_parameters_for_MADE_IC_BC.py on details how to compute the mapping coefficient
+    
+    Below is some communication with Andrea Pozzer regarding the VOCs/SOA.
+    "SOAv0201_* is the aerosol phase equivalent of the first entry in SOGv02 in oracle.nml, i.e. LaSOGv02. This is a product of anthropogenic gases (see final part of ~/MESSy/Nussbaumer/messy_2.54.0/messy/mbm/caaba/mecca/mecca.eqn).
+    SOAv0202_* in instead the equivalent of the second entry of SOGv02, i.e. LbSOGv02, which are the *BIOGENIC* emissions."
     '''
 
     class IcBcMappingItem():
