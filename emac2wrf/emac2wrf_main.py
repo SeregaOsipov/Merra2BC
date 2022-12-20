@@ -15,6 +15,7 @@ from emac2wrf.emac2wrf_config import get_emac2wrf_mapping
 from emac2wrf.lexical_utils import parse_mapping_rule, get_unique_wrf_keys_from_mappings
 import wrf as wrf
 import pandas as pd
+from distutils.util import strtobool
 
 """
 EMAC2WRF was developed from MERRA2WRF alike
@@ -28,6 +29,7 @@ Notes:
 1. It is best, when both WRF and EMAC output are in daily per file. MFDataset is possible, but probably less reliable
 2. Either set start & end dates & hourly interval or None. Dates to process then will be deduced from the wrfbdy.
 
+<<<<<<< HEAD
 How to run:
 gogomamba
 python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --start_date=2017-06-15_00:00:00 --end_date=2017-09-01_00:00:00 --hourly_interval=3
@@ -37,10 +39,20 @@ year=2050
 data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/${year}/
 python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py  --hourly_interval=3  --do_IC --do_BC --zero_out_first --emac_dir=${data_dir}/IC_BC/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/IC_BC/met_em/ --wrf_met_files=met_em.d01.${year}-*
 
+=======
+How to run (to not specify dates to derive them from wrf files):
+gogomamba
+data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/IC_BC/2017
+python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py  --hourly_interval=3  --do_IC=True --zero_out_first=True --emac_dir=${data_dir}/emac/ --wrf_dir=${data_dir}/1-week-icbc/ --wrf_met_dir=${data_dir}/met_em/
+>>>>>>> d957402cdfc77dab136822a2b8555fa1a62f60b7
 """
 
+#%%
 root_path = '/project/k1090/osipovs'  # SHAHEEN
 root_path = '/work/mm0062/b302074'  # MISTRAL
+
+# debug
+# data_dir='/work/mm0062/b302074/Data/AirQuality/EMME/IC_BC/2017'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--start_date", help="YYYY-MM-DD_HH:MM:SS format", default=None)  # default='2017-08-31_21:00:00')  #
@@ -53,7 +65,7 @@ parser.add_argument("--zero_out_first", help="zero out fields in IC and BC first
 parser.add_argument("--emac_dir", help="folder containing emac output", default='/work/mm0062/b302011/script/Osipov/simulations/AQABA/')  # /work/mm0062/b302011/script/Osipov/simulations/AQABA_2050
 parser.add_argument("--emac_file_name_template", help="folder containing emac output", default='MIM_STD________{date_time}_{stream}.nc')  # sim label has fixed width and then filled with ___
 # setup downscaling model (WRF)
-parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files", default=root_path + '/Data/AirQuality/EMME/IC_BC/')
+parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files")   # , default=data_dir+'/1-week-icbc/')
 parser.add_argument("--wrf_input", help="use default wrfinput_d01", default='wrfinput_d01')
 parser.add_argument("--wrf_bdy_file", help="use default wrfbdy_d01", default='wrfbdy_d01')
 parser.add_argument("--wrf_met_dir", help="use default wrfbdy_d01", default=root_path + '/Data/AirQuality/EMME/IC_BC/met_em')
@@ -99,7 +111,7 @@ for mapping in mappings:
 # dates_to_process = wrf_module.dates.keys() & emac_module.dates.keys()
 # Or get all dates from wrf_bdy
 if args.start_date is None or args.end_date is None:
-    print('Dates to process will be derived from wrf_bdy file')
+    print('\nDates to process will be derived from wrf_bdy file\n')
     wrfbdy_f = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r+')
     wrf_bdy_dates = wrf.extract_times(wrfbdy_f, wrf.ALL_TIMES)
     wrf_bdy_dates = pd.to_datetime(wrf_bdy_dates)
