@@ -27,27 +27,37 @@ Steps:
 Notes:
 1. It is best, when both WRF and EMAC output are in daily per file. MFDataset is possible, but probably less reliable
 2. Either set start & end dates & hourly interval or None. Dates to process then will be deduced from the wrfbdy.
+
+How to run:
+gogomamba
+python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --start_date=2017-06-15_00:00:00 --end_date=2017-09-01_00:00:00 --hourly_interval=3
+
+EMME 2050 example
+year=2050
+data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/${year}/
+python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py  --hourly_interval=3  --do_IC --do_BC --zero_out_first --emac_dir=${data_dir}/IC_BC/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/IC_BC/met_em/ --wrf_met_files=met_em.d01.${year}-*
+
 """
 
 root_path = '/project/k1090/osipovs'  # SHAHEEN
 root_path = '/work/mm0062/b302074'  # MISTRAL
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--start_date", help="YYYY-MM-DD_HH:MM:SS format", default='2017-06-02_00:00:00')  # default=None)  #TODO: set back to None after debugging
-parser.add_argument("--end_date", help="YYYY-MM-DD_HH:MM:SS format", default='2017-06-03_00:00:00')  # default=None)  #
+parser.add_argument("--start_date", help="YYYY-MM-DD_HH:MM:SS format", default=None)  # default='2017-08-31_21:00:00')  #
+parser.add_argument("--end_date", help="YYYY-MM-DD_HH:MM:SS format", default=None)  # default='2017-09-01_00:00:00')  #
 parser.add_argument("--hourly_interval", help="dt in dates to process", default=3)
-parser.add_argument("--do_IC", help="process initial conditions?", default=False)
-parser.add_argument("--do_BC", help="process boundary conditions?", default=True)
-parser.add_argument("--zero_out_first", help="zero out fields in IC and BC first?", default=True)
+parser.add_argument("--do_IC", help="process initial conditions?", action='store_true')
+parser.add_argument("--do_BC", help="process boundary conditions?", action='store_true')
+parser.add_argument("--zero_out_first", help="zero out fields in IC and BC first?", action='store_true')
 # setup parent model (EMAC)
-parser.add_argument("--emac_dir", help="folder containing emac output", default='/work/mm0062/b302011/script/Osipov/simulations/AQABA/')
+parser.add_argument("--emac_dir", help="folder containing emac output", default='/work/mm0062/b302011/script/Osipov/simulations/AQABA/')  # /work/mm0062/b302011/script/Osipov/simulations/AQABA_2050
 parser.add_argument("--emac_file_name_template", help="folder containing emac output", default='MIM_STD________{date_time}_{stream}.nc')  # sim label has fixed width and then filled with ___
 # setup downscaling model (WRF)
 parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files", default=root_path + '/Data/AirQuality/EMME/IC_BC/')
 parser.add_argument("--wrf_input", help="use default wrfinput_d01", default='wrfinput_d01')
 parser.add_argument("--wrf_bdy_file", help="use default wrfbdy_d01", default='wrfbdy_d01')
 parser.add_argument("--wrf_met_dir", help="use default wrfbdy_d01", default=root_path + '/Data/AirQuality/EMME/IC_BC/met_em')
-parser.add_argument("--wrf_met_files", help="met_em file names template", default='met_em.d01.2017-0*')
+parser.add_argument("--wrf_met_files", help="met_em file names template")  # , default='met_em.d01.2017-0*')
 
 parser.add_argument("--mode", "--port", help="the are only to support pycharm debugging")
 args = parser.parse_args()
@@ -196,10 +206,13 @@ if config.do_BC:
     for date in dates_to_process:
         print("\n\tBCs, next date: {}".format(date))
 
-        fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream='ECHAM5')  # file with the pressure
-        emac_nc = Dataset(fp, 'r')
+        # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream='ECHAM5')  # file with the pressure
+        # emac_nc = Dataset(fp, 'r')
         # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m*'), stream='ECHAM5')  # MF
         # emac_nc = netCDF4.MFDataset(fp, 'r')
+        fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream='ECHAM5')  # daily MF. Due to EMAC restarts, files can split sub-daily
+        emac_nc = netCDF4.MFDataset(fp, 'r')
+
         emac_nc_dates = netCDF4.num2date(emac_nc['time'][:], emac_nc['time'].units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
         emac_nc_dates = pd.to_datetime(emac_nc_dates)
 
@@ -244,10 +257,12 @@ if config.do_BC:
                 merra_key = rule_vo['merra_key']
                 wrf_key = rule_vo['wrf_key']
 
-                fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream=mapping.emac_stream)
-                emac_stream_nc = Dataset(fp)
+                # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream=mapping.emac_stream)
+                # emac_stream_nc = Dataset(fp)
                 # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m*'), stream=mapping.emac_stream)  # MF
                 # emac_stream_nc = netCDF4.MFDataset(fp)
+                fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream=mapping.emac_stream)  # daily MF
+                emac_stream_nc = netCDF4.MFDataset(fp)
                 parent_var = emac_module.get_3d_field_by_time_index(time_index_in_emac, emac_stream_nc, rule_vo['merra_key'])
                 emac_stream_nc.close()
 
