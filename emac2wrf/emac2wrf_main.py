@@ -21,15 +21,13 @@ from distutils.util import strtobool
 EMAC2WRF was developed from MERRA2WRF alike
  
 Steps:
-1. Run zero_fields.py first to zero out the IC and BC for specified chem species
-2. Run this file, which will increment the IC and BC according to config
-3. Change config and run again to include other trace gases and aerosols
+1. This script will increment the IC and BC according to config
+2. Change config and run again to include other trace gases and aerosols (if necessary)
 
 Notes:
 1. It is best, when both WRF and EMAC output are in daily per file. MFDataset is possible, but probably less reliable
 2. Either set start & end dates & hourly interval or None. Dates to process then will be deduced from the wrfbdy.
 
-<<<<<<< HEAD
 How to run:
 gogomamba
 python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --start_date=2017-06-15_00:00:00 --end_date=2017-09-01_00:00:00 --hourly_interval=3
@@ -37,22 +35,15 @@ python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --start_date=2017-06-15_00:00:00
 EMME 2050 example
 year=2050
 data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/${year}/
-python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py  --hourly_interval=3  --do_IC --do_BC --zero_out_first --emac_dir=${data_dir}/IC_BC/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/IC_BC/met_em/ --wrf_met_files=met_em.d01.${year}-*
+python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --emac_dir=${data_dir}/IC_BC/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/IC_BC/met_em/ --wrf_met_files=met_em.d01.${year}-* >& log.emac2wrf
 
-=======
-How to run (to not specify dates to derive them from wrf files):
-gogomamba
-data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/IC_BC/2017
-python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py  --hourly_interval=3  --do_IC=True --zero_out_first=True --emac_dir=${data_dir}/emac/ --wrf_dir=${data_dir}/1-week-icbc/ --wrf_met_dir=${data_dir}/met_em/
->>>>>>> d957402cdfc77dab136822a2b8555fa1a62f60b7
+run only between selected dates, skip IC
+python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --hourly_interval=3 --do_BC --start_date=2050-08-01_00:00:00 --end_date=2051-01-01_03:00:00 --zero_out_first --emac_dir=${data_dir}/IC_BC/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/IC_BC/met_em/ --wrf_met_files=met_em.d01.${year}-* >& log.emac2wrf
 """
 
 #%%
 root_path = '/project/k1090/osipovs'  # SHAHEEN
 root_path = '/work/mm0062/b302074'  # MISTRAL
-
-# debug
-# data_dir='/work/mm0062/b302074/Data/AirQuality/EMME/IC_BC/2017'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--start_date", help="YYYY-MM-DD_HH:MM:SS format", default=None)  # default='2017-08-31_21:00:00')  #
@@ -63,7 +54,7 @@ parser.add_argument("--do_BC", help="process boundary conditions?", action='stor
 parser.add_argument("--zero_out_first", help="zero out fields in IC and BC first?", action='store_true')
 # setup parent model (EMAC)
 parser.add_argument("--emac_dir", help="folder containing emac output", default='/work/mm0062/b302011/script/Osipov/simulations/AQABA/')  # /work/mm0062/b302011/script/Osipov/simulations/AQABA_2050
-parser.add_argument("--emac_file_name_template", help="folder containing emac output", default='MIM_STD________{date_time}_{stream}.nc')  # sim label has fixed width and then filled with ___
+parser.add_argument("--emac_file_name_template", help="folder containing emac output", default='test01_________{date_time}_{stream}.nc')  # sim label has fixed width and then filled with ___
 # setup downscaling model (WRF)
 parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files")   # , default=data_dir+'/1-week-icbc/')
 parser.add_argument("--wrf_input", help="use default wrfinput_d01", default='wrfinput_d01')
@@ -119,7 +110,7 @@ if args.start_date is None or args.end_date is None:
 else:
     print('Dates to process will be generated between start and end dates')
     # manually setup dates to process. Check the coverage in WRF
-    dates_to_process = list(rrule.rrule(rrule.HOURLY, interval=args.hourly_interval, dtstart=start_date, until=end_date))  # has to match exactly dates in EMAC output
+    dates_to_process = list(rrule.rrule(rrule.HOURLY, interval=int(args.hourly_interval), dtstart=start_date, until=end_date))  # has to match exactly dates in EMAC output
 
 # check that merra2 time is covered by wrf time
 # if len(time_intersection) != len(wrf_module.wrf_times):
