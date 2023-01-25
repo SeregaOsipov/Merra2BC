@@ -113,7 +113,7 @@ def initialise(config, mappings):  # TODO: get rid of this
     # get the aux info from any mapping rule
     mapping = mappings[0]
 
-    file_name = config.emac_file_name_template.format(date_time='\w+', stream=mapping.emac_stream)  # only works for each mapping separatelly
+    file_name = config.emac_file_name_template.format(date_time='\w+', stream=mapping.output_stream)  # only works for each mapping separatelly
     file_names = [f for f in os.listdir(config.emac_dir) if re.match(file_name, f) is not None]
     # files = sorted([f for f in os.listdir(config.dir) if re.match(mapping.files, f) is not None], key=numericalSort)
     # print("Open "+config.dir+"/"+files[0])

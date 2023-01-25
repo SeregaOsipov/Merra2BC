@@ -45,37 +45,36 @@ def get_file_name_by_index(index):
 
 # ********************************
 # Horizontal interpolation of 3d Merra field on WRF boundary
-def hor_interpolate_3dfield_on_wrf_boubdary(FIELD, wrf_length, wrf_lon, wrf_lat):
-    FIELD_BND = np.zeros([n_z_points, wrf_length])
-    for z_level in range(n_z_points):
-        f = interpolate.RectBivariateSpline(lat, lon, FIELD[z_level, :, :])
+def hor_interpolate_3dfield_on_wrf_boubdary(field_df, wrf_length, wrf_lon, wrf_lat):
+    FIELD_BND = np.zeros([field_df.sizes['lev'], wrf_length])
+    for z_level in range(field_df.sizes['lev']):
+        f = interpolate.RectBivariateSpline(field_df.lat, field_df.lon, field_df.isel(lev=z_level))
         FIELD_BND[z_level, :] = f(wrf_lat, wrf_lon, grid=False)
     return FIELD_BND
 
 
 # Vertical interpolation of Merra boundary on WRF boundary
-def ver_interpolate_3dfield_on_wrf_boubdary(MER_HOR_SPECIE_BND, MER_HOR_PRES_BND, WRF_PRES_BND, wrf_nz, wrf_length):
+def ver_interpolate_3dfield_on_wrf_boubdary(var_df, merra_p_df, WRF_PRES_BND, wrf_nz, wrf_length):
     WRF_SPECIE_BND = np.zeros([wrf_nz, wrf_length])  # Required SPEC on WRF boundary
     for i in range(0, wrf_length):
-        f = interpolate.interp1d(MER_HOR_PRES_BND[:, i], MER_HOR_SPECIE_BND[:, i], kind='linear', bounds_error=False,
-                                 fill_value=0)
+        f = interpolate.interp1d(merra_p_df[:, i], var_df[:, i], kind='linear', bounds_error=False, fill_value=0)
         WRF_SPECIE_BND[:, i] = f(WRF_PRES_BND[:, i])
     return WRF_SPECIE_BND
 
 
 # Horizontal interpolation of 3d Merra field on WRF horizontal grid
-def hor_interpolate_3dfield_on_wrf_grid(FIELD, wrf_ny, wrf_nx, wrf_lon, wrf_lat):
-    FIELD_HOR = np.zeros([n_z_points, wrf_ny, wrf_nx])
+def hor_interpolate_3d_field_on_wrf_grid(field_df, wrf_ny, wrf_nx, wrf_lon, wrf_lat):
+    FIELD_HOR = np.zeros([field_df.sizes['lev'], wrf_ny, wrf_nx])
 
-    for z_level in range(n_z_points):
-        f = interpolate.RectBivariateSpline(lat, lon, FIELD[z_level, :, :])
+    for z_level in range(field_df.sizes['lev']):
+        f = interpolate.RectBivariateSpline(field_df.lat, field_df.lon, field_df.isel(lev=z_level))
         FIELD_HOR[z_level, :, :] = f(wrf_lat, wrf_lon, grid=False).reshape(wrf_ny, wrf_nx)
 
     return FIELD_HOR
 
 
 # Vertical interpolation on WRF grid
-def ver_interpolate_3dfield_on_wrf_grid(MER_HOR_SPECIE, MER_HOR_PRES, WRF_PRES, wrf_nz, wrf_ny, wrf_nx):
+def ver_interpolate_3d_field_on_wrf_grid(MER_HOR_SPECIE, MER_HOR_PRES, WRF_PRES, wrf_nz, wrf_ny, wrf_nx):
     WRF_SPECIE = np.zeros([wrf_nz, wrf_ny, wrf_nx])  # Required SPEC on WRF grid
     for x in range(0, wrf_nx, 1):
         for y in range(0, wrf_ny, 1):
@@ -123,12 +122,17 @@ def get_pressure_by_time(time, merra_file):
     return MER_Pres
 
 
-def initialise(config):
-    global files, n_x_points, n_y_points, n_z_points, lon, lat, vars, shifted_lons, shift_index
+def initialise(config, mappings):
+    # global files, n_x_points, n_y_points, n_z_points, lon, lat, vars, shifted_lons, shift_index
 
-    files = sorted([f for f in os.listdir(config.mera_dir) if re.match(config.mera_files, f)], key=numericalSort)
-    # print("Open "+config.mera_dir+"/"+files[0])
-    merra_f = Dataset(config.mera_dir + "/" + files[0], 'r')
+    # get the aux info from any mapping rule
+    mapping = mappings[0]
+    fp = config.merra2_dir + config.merra2_file_name_template.format(date_time='\w+', stream=mapping.output_stream)
+    file_name = os.path.basename(fp)
+    folder_path = os.path.dirname(fp)
+    files = sorted([f for f in os.listdir(folder_path) if re.match(file_name, f)], key=numericalSort)
+
+    merra_f = Dataset('{}/{}'.format(folder_path, files[0]), 'r')
     n_x_points = merra_f.variables['lon'].size
     n_y_points = merra_f.variables['lat'].size
     try:  # not all merra2 files (loading diagnostic) have 'lev' variable

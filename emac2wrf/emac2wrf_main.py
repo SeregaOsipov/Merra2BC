@@ -1,16 +1,12 @@
 import argparse
-import merra2wrf_config
 import time
 import wrf_module
-import merra2wrf_mapper
 import netCDF4
 from netCDF4 import Dataset
 import numpy as np
-from datetime import datetime
 import datetime as dt
 from dateutil import rrule
-from emac2wrf import emac2wrf_config, emac_module
-from emac2wrf.bc_ic_utils import is_child_domain_covered_by_parent_domain
+from emac2wrf import emac_module
 from emac2wrf.emac2wrf_config import get_emac2wrf_mapping
 from emac2wrf.lexical_utils import parse_mapping_rule, get_unique_wrf_keys_from_mappings
 import wrf as wrf
@@ -79,28 +75,11 @@ wrf_module.initialise(args)
 emac_module.initialise(args, mappings)
 
 # prepare the mapping to process
-# pipe_to_process = parse_mapping_rules(config.spc_map)
 print("\nConversion MAP:")
 for mapping in mappings:
     print(mapping.mapping_rule_str + ":\t")
 
-#%% -----------------------------
-# Sanity checks:
-# check species availability in wrf and in merra files
-# for rule_vo in pipe_to_process:
-#     if rule_vo['merra_key'] not in emac_module.vars:
-#         raise Exception("Could not find variable " + rule_vo['merra_key'] + " in parent model file. Exiting...")
-
-# for rule_vo in pipe_to_process:
-#     if rule_vo['wrf_key'] not in wrf_module.wrf_vars:
-#         raise Exception("Could not find variable " + rule_vo['wrf_key'] + " in WRF input file. Exiting...")
-
-# check domain coverage
-# if not is_child_domain_covered_by_parent_domain(emac_module, wrf_module):
-#     raise Exception("Child domain (WRF) is not fully covered by Parent domain area. Exiting...")
-
-# dates_to_process = wrf_module.dates.keys() & emac_module.dates.keys()
-# Or get all dates from wrf_bdy
+#%%
 if args.start_date is None or args.end_date is None:
     print('\nDates to process will be derived from wrf_bdy file\n')
     wrfbdy_f = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r+')
@@ -112,21 +91,8 @@ else:
     # manually setup dates to process. Check the coverage in WRF
     dates_to_process = list(rrule.rrule(rrule.HOURLY, interval=int(args.hourly_interval), dtstart=start_date, until=end_date))  # has to match exactly dates in EMAC output
 
-# check that merra2 time is covered by wrf time
-# if len(time_intersection) != len(wrf_module.wrf_times):
-#     print('These datetimes are missing in MERRA2 dataset:')
-#     time_intersection = dict.fromkeys(time_intersection, 0)
-#     for key in wrf_module.wrf_times.keys():
-#         if not key in time_intersection:
-#             print(key)
-#     raise Exception("WRF time range is not fully covered by MERRA2 time range. Exiting...")
 
-# -----------------------------
-# sorting times for processing
-# time_intersection = sorted(time_intersection, key=lambda x: time.mktime(time.strptime(x, "%Y-%m-%d_%H:%M:%S")))
-# print("\nTimes for processing: {}".format(time_intersection))
-# exit()
-
+#%% IC
 if config.do_IC:
     date = dates_to_process[0]
     print("INITIAL CONDITIONS: {}".format(date))
@@ -142,16 +108,7 @@ if config.do_IC:
     emac_pressure_rho_3d = emac_module.get_3d_field_by_time_index(time_index_in_emac, emac_nc, 'press')  # press_ave
     emac_pressure_rho_3d_hi = emac_module.hor_interpolate_3d_field_on_wrf_grid(emac_pressure_rho_3d, wrf_module.ny, wrf_module.nx, wrf_module.xlon, wrf_module.xlat)
 
-    # visual debug
-    # import matplotlib.pyplot as plt
-    # plt.figure(num=0)
-    # plt.clf()
-    # plt.contourf(emac_module.lon, emac_module.lat, emac_pressure_rho_3d[-1])
-    # plt.figure(num=1)
-    # plt.clf()
-    # plt.contourf(wrf_module.xlon, wrf_module.xlat, emac_pressure_rho_3d_hi[-1])
-
-    met_file_name = wrf_module.get_met_file_by_time(date.strftime('%Y-%m-%d_%H:%M:%S'))
+    met_file_name = wrf_module.get_met_file_by_time(date .strftime('%Y-%m-%d_%H:%M:%S'))
     met_fp = config.wrf_met_dir + "/" + met_file_name
     print("Opening metfile: " + met_fp)
     wrf_met_nc = Dataset(met_fp, 'r')
@@ -172,7 +129,7 @@ if config.do_IC:
         pipe_to_process = parse_mapping_rule(mapping.mapping_rule_str)
         for rule_vo in pipe_to_process:
             print("\t\t - Reading " + rule_vo['merra_key'])
-            fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_%H%M'), stream=mapping.emac_stream)
+            fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_%H%M'), stream=mapping.output_stream)
             emac_stream_nc = Dataset(fp)
             # parent_var = emac_module.get_3d_field_by_time(date, emac_stream_nc, rule_vo['merra_key'])
             parent_var = emac_module.get_3d_field_by_time_index(0, emac_stream_nc, rule_vo['merra_key'])
@@ -223,7 +180,6 @@ if config.do_BC:
         time_index_in_wrfbdy = wrf_bdy_dates.get_loc(date)
 
         print("\tReading EMAC Pressure at time index {} from {}".format(time_index_in_emac, fp))
-        # emac_pressure_rho_3d = emac_module.get_3d_field_by_time(date, emac_nc, 'press')  # press_ave
         emac_pressure_rho_3d = emac_module.get_3d_field_by_time_index(time_index_in_emac, emac_nc, 'press')  # press_ave
         print("\tHorizontal interpolation of EMAC Pressure on WRF boundary")
         emac_pressure_rho_3d_hi = emac_module.hor_interpolate_3dfield_on_wrf_boubdary(emac_pressure_rho_3d, len(wrf_module.boundary_lons), wrf_module.boundary_lons, wrf_module.boundary_lats)
@@ -260,11 +216,7 @@ if config.do_BC:
                 merra_key = rule_vo['merra_key']
                 wrf_key = rule_vo['wrf_key']
 
-                # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream=mapping.emac_stream)
-                # emac_stream_nc = Dataset(fp)
-                # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m*'), stream=mapping.emac_stream)  # MF
-                # emac_stream_nc = netCDF4.MFDataset(fp)
-                fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream=mapping.emac_stream)  # daily MF
+                fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream=mapping.output_stream)  # daily MF
                 emac_stream_nc = netCDF4.MFDataset(fp)
                 parent_var = emac_module.get_3d_field_by_time_index(time_index_in_emac, emac_stream_nc, rule_vo['merra_key'])
                 emac_stream_nc.close()
