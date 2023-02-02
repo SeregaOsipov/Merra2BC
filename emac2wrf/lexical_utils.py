@@ -38,7 +38,7 @@ def parse_mapping_rule(rule):
         rule_vo['merra_key'] = r[1]
         rule_vo['wrf_key'] = m[0]
         rule_vo['wrf_multiplier'] = float(r[0])
-        rule_vo['wrf_exponent'] = m[2]  # TODO: this is reduntant field, should be moved to the coefficient
+        rule_vo['wrf_exponent'] = m[2]  # TODO: this is redundant field, should be moved to the coefficient
         pipe_to_process.append(rule_vo)
 
     return pipe_to_process
