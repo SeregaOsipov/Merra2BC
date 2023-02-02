@@ -20,7 +20,7 @@ How to run (AREAD 2022 example):
 gogomamba
 year=2022
 data_dir=/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/
-python -u ${MERRA2BC}/merra2wrf.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/met_em/ --wrf_met_files=met_em.d01.${year}-* >& log.emac2wrf
+python -u ${MERRA2BC}/merra2wrf.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir}/debugICBC/ --wrf_met_dir=${data_dir}/met_em/ --wrf_met_files=met_em.d01.${year}-* >& log.emac2wrf
 """
 
 #%% TODO: try to merge with emac2wrf
@@ -54,11 +54,11 @@ if args.end_date:
 config = args
 
 #%% DEBUG settings
-#args.wrf_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/debugICBC/'
-#args.wrf_met_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/met_em/'
+# args.wrf_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/debugICBC/'
+# args.wrf_met_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/met_em/'
 #args.wrf_met_files = 'met_em.d01.2022-0*'
 # config.do_IC = True
-#config.do_BC = True
+# config.do_BC = True
 # config.zero_out_first = False  # just speed up
 #%%
 start_time = time.time()
