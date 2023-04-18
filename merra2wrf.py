@@ -54,34 +54,35 @@ if args.end_date:
 config = args
 
 #%% DEBUG settings
-# args.wrf_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/debugICBC/'
-# args.wrf_met_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/met_em/'
-#args.wrf_met_files = 'met_em.d01.2022-0*'
-# config.do_IC = True
-# config.do_BC = True
+args.wrf_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/debugICBC/'
+args.wrf_met_dir = '/work/mm0062/b302074/Data/AirQuality/AREAD/IC_BC/met_em/'
+args.wrf_met_files = 'met_em.d01.2022-0*'
+config.do_IC = True
+config.do_BC = True
 # config.zero_out_first = False  # just speed up
 #%%
 start_time = time.time()
 
 mappings = get_merra2wrf_mapping()
 wrf_module.initialise(args)
-# merra2_module.initialise(args, mappings)
 
 print("\nConversion MAP:")
 for mapping in mappings:
     print(mapping.mapping_rule_str + ":\t")
 
 #%%
-if args.start_date is None or args.end_date is None:
-    print('\nDates to process will be derived from wrf_bdy file\n')
-    wrfbdy_f = nc.Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r+')
-    wrf_bdy_dates = wrf.extract_times(wrfbdy_f, wrf.ALL_TIMES)
-    wrf_bdy_dates = pd.to_datetime(wrf_bdy_dates)
-    dates_to_process = wrf_bdy_dates
-else:
-    print('Dates to process will be generated between start and end dates')
-    # manually setup dates to process. Check the coverage in WRF
-    dates_to_process = list(rrule.rrule(rrule.HOURLY, interval=int(args.hourly_interval), dtstart=start_date, until=end_date))  # has to match exactly dates in EMAC output
+print('\nDeriving dates to process from wrf_bdy file\n')
+wrfbdy_f = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r+')
+wrf_bdy_dates = wrf.extract_times(wrfbdy_f, wrf.ALL_TIMES)
+wrf_bdy_dates = pd.to_datetime(wrf_bdy_dates)
+dates_to_process = wrf_bdy_dates
+
+if args.start_date is not None:
+    dates_to_process = dates_to_process[dates_to_process >= start_date]
+if args.end_date is not None:
+    dates_to_process = dates_to_process[dates_to_process <= end_date]
+
+# dates_to_process = list(rrule.rrule(rrule.HOURLY, interval=int(args.hourly_interval), dtstart=start_date, until=end_date))  # has to match exactly dates in EMAC output
 
 #%% IC
 if config.do_IC:
@@ -92,13 +93,22 @@ if config.do_IC:
     print("Opening file: {}".format(fp))
     merra_df = xr.open_dataset(fp)
     merra_df = merra_df.sel(time=date)
+    pressure_stag, pressure_rho = derive_merra2_pressure_profile(merra_df)
+    merra_df['p_rho'] = pressure_rho
+    # merra_df['p_stag'] = pressure_stag  # to assign, rename lev to lev_stag
+
+    # only flip once pressure is computed
     merra_df = merra_df.isel(lev=slice(None, None, -1))  # flip vertical dimension
 
-    pressure_stag, pressure_rho = derive_merra2_pressure_profile(merra_df)
-    merra_pressure_rho_3d = pressure_rho
+    # alternative way to sort
+    # merra_df = merra_df.sortby('lev', ascending=False) # set TOA as last layer
+    # pressure_stag = pressure_stag.sortby('lev', ascending=False)
+    # pressure_rho = pressure_rho.sortby('lev', ascending=False)
+
+    merra_pressure_rho_3d = merra_df['p_rho']
     merra_pressure_rho_3d_hi = merra2_module.hor_interpolate_3d_field_on_wrf_grid(merra_pressure_rho_3d, wrf_module.ny, wrf_module.nx, wrf_module.xlon, wrf_module.xlat)
 
-    met_file_name = wrf_module.get_met_file_by_time(date.strftime('%Y-%m-%d_%H:%M:%S'))
+    met_file_name = wrf_module.get_met_file_by_time(date.strftime('%Y-%m-%d_%H_%M_%S'))
     met_fp = config.wrf_met_dir + "/" + met_file_name
     print("Opening metfile: " + met_fp)
     wrf_met_nc = nc.Dataset(met_fp, 'r')
@@ -161,14 +171,17 @@ if config.do_BC:
         print("Opening file: {}".format(fp))
         merra_df = xr.open_dataset(fp)
         merra_df = merra_df.sel(time=date)
+        pressure_stag, pressure_rho = derive_merra2_pressure_profile(merra_df)
+        merra_df['p_rho'] = pressure_rho
+        # merra_df['p_stag'] = pressure_stag  # to assign, rename lev to lev_stag
+
         merra_df = merra_df.isel(lev=slice(None, None, -1))  # flip vertical dimension
 
-        pressure_stag, pressure_rho = derive_merra2_pressure_profile(merra_df)
-        merra_pressure_rho_3d = pressure_rho
+        merra_pressure_rho_3d = merra_df['p_rho']
         print("\tHorizontal interpolation of MERRA Pressure on WRF boundary")
         merra_pressure_rho_3d_hi = merra2_module.hor_interpolate_3dfield_on_wrf_boubdary(merra_pressure_rho_3d, len(wrf_module.boundary_lons), wrf_module.boundary_lons, wrf_module.boundary_lats)
 
-        met_file_name = wrf_module.get_met_file_by_time(date.strftime('%Y-%m-%d_%H:%M:%S'))
+        met_file_name = wrf_module.get_met_file_by_time(date.strftime('%Y-%m-%d_%H_%M_%S'))
         met_fp = config.wrf_met_dir + "/" + met_file_name
         print("\tReading WRF Pressure from: {}".format(met_fp))
         wrf_met_nc = nc.Dataset(met_fp, 'r')

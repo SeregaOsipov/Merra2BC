@@ -15,3 +15,9 @@ def is_child_domain_covered_by_parent_domain(parent_domain, child_domain):
                      max(child_domain.boundary_lats) < max(parent_domain.lat))
 
     return result
+
+
+class IcBcMappingItem():
+    def __init__(self, mapping_rule_str, output_stream):
+        self.mapping_rule_str = mapping_rule_str
+        self.output_stream = output_stream  # plugs into the filename template

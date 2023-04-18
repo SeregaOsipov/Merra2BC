@@ -1,5 +1,5 @@
 import numpy as np
-
+from emac2wrf.bc_ic_utils import IcBcMappingItem
 
 class Config(object):
     pass
@@ -88,10 +88,6 @@ def get_merra2wrf_mapping():
     See aerosol_parameters_for_MADE_IC_BC.py on details how to compute the mapping coefficient
     '''
 
-    class IcBcMappingItem():
-        def __init__(self, mapping_rule_str, emac_stream):
-            self.mapping_rule_str = mapping_rule_str
-            self.output_stream = emac_stream  # plugs into the filename template
 
     gas_stream = 'inst3_3d_chm_Nv'
     aerosol_stream = 'inst3_3d_aer_Nv'

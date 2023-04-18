@@ -1,4 +1,5 @@
 import numpy as np
+from emac2wrf.bc_ic_utils import IcBcMappingItem
 
 
 def get_emac2wrf_mapping():
@@ -22,10 +23,6 @@ def get_emac2wrf_mapping():
     SOAv0202_* in instead the equivalent of the second entry of SOGv02, i.e. LbSOGv02, which are the *BIOGENIC* emissions."
     '''
 
-    class IcBcMappingItem():
-        def __init__(self, mapping_rule_str, emac_stream):
-            self.mapping_rule_str = mapping_rule_str
-            self.emac_stream = emac_stream  # plugs into the filename template
 
     mappings = [  # see channel.nml
         IcBcMappingItem('so2 -> 1*[SO2];1.e6', 'tr_sulfur'),  # SO2_ave
