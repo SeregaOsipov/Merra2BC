@@ -22,7 +22,7 @@ Steps:
 2. Change config and run again to include other trace gases and aerosols (if necessary)
 
 Notes:
-1. It is best, when both WRF and EMAC output are in daily per file. MFDataset is possible, but probably less reliable
+1. It is best to have both WRF and EMAC output as daily per file. MFDataset is possible, but probably less reliable
 2. Either set start & end dates & hourly interval or None. Dates to process then will be deduced from the wrfbdy.
 
 How to run:
