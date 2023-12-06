@@ -29,11 +29,16 @@ How to run:
 gogomamba
 python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --start_date=2017-06-15_00:00:00 --end_date=2017-09-01_00:00:00 --hourly_interval=3
 
-EMME 2017 / 2050 example
-year=2017  # 2050
-data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/${year}/IC_BC/
-python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --emac_dir=${data_dir}/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/met_em/ --wrf_met_files=met_em.d01.${year}-* >& log.emac2wrf
 
+EMME 2017 / 2050 examples:
+year=2017
+scenario=
+
+year=2050
+scenario=CLE
+
+data_dir=/work/mm0062/b302074/Data/AirQuality/EMME/${year}/${scenario}/IC_BC/
+python -u ${MERRA2BC}/emac2wrf/emac2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --emac_dir=${data_dir}/emac/ --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/met_em/ --wrf_met_files=met_em.d01.${year}-* >& log.emac2wrf
 """
 
 #%%
@@ -48,7 +53,7 @@ parser.add_argument("--do_IC", help="process initial conditions?", action='store
 parser.add_argument("--do_BC", help="process boundary conditions?", action='store_true')
 parser.add_argument("--zero_out_first", help="zero out fields in IC and BC first?", action='store_true')
 # setup parent model (EMAC)
-parser.add_argument("--emac_dir", help="folder containing emac output", default='/work/mm0062/b302011/script/Osipov/simulations/AQABA/')  # /work/mm0062/b302011/script/Osipov/simulations/AQABA_2050
+parser.add_argument("--emac_dir", help="folder containing emac output")  # /work/mm0062/b302011/script/Osipov/simulations/AQABA_2050
 parser.add_argument("--emac_file_name_template", help="folder containing emac output", default='test01_________{date_time}_{stream}.nc')  # sim label has fixed width and then filled with ___
 # setup downscaling model (WRF)
 parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files")   # , default=data_dir+'/1-week-icbc/')
@@ -59,6 +64,19 @@ parser.add_argument("--wrf_met_files", help="met_em file names template")  # , d
 
 parser.add_argument("--mode", "--port", help="the are only to support pycharm debugging")
 args = parser.parse_args()
+
+# debug section
+# print("DEBUG SETTINGS ARE ON")
+# year = 2017
+# data_dir = '/work/mm0062/b302074/Data/AirQuality/EMME/2017/IC_BC/'
+#
+# args.do_IC = True
+# args.do_BC = True
+# args.zero_out_first = True
+# args.emac_dir = data_dir + '/emac/'
+# args.wrf_dir = data_dir
+# args.wrf_met_dir = data_dir + '/met_em/'
+# args.wrf_met_files = 'met_em.d01.{}-*'.format(year)
 
 if args.start_date:
     start_date = dt.datetime.strptime(args.start_date, '%Y-%m-%d_%H:%M:%S')
@@ -106,7 +124,8 @@ if config.do_IC:
     date = dates_to_process[0]
     print("INITIAL CONDITIONS: {}".format(date))
 
-    fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream='ECHAM5')  # '%Y%m%d_%H%M'
+    # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream='ECHAM5')  # '%Y%m%d_%H%M'
+    fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream='WRF_bc_met')  # '%Y%m%d_%H%M'
     print("Opening file: {}".format(fp))
     emac_df = get_emac_df(fp)
     emac_df = emac_df.sel(time=date)
@@ -134,8 +153,8 @@ if config.do_IC:
         print('Processing mapping: {}'.format(mapping.mapping_rule_str))
         pipe_to_process = parse_mapping_rule(mapping.mapping_rule_str)
         for rule_vo in pipe_to_process:
-            print("\t\t - Reading " + rule_vo['merra_key'])
             fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_0000'), stream=mapping.output_stream)
+            print("\t\t - Reading " + rule_vo['merra_key'] + " from {}".format(fp))
             emac_stream_df = get_emac_df(fp)
             emac_stream_df = emac_stream_df.sel(time=date)
             parent_var_da = emac_stream_df[rule_vo['merra_key']].load()
@@ -177,7 +196,8 @@ if config.do_BC:
         # emac_nc = netCDF4.MFDataset(fp, 'r')
         # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream='ECHAM5')  # daily MF. Due to EMAC restarts, files can split sub-daily
         # emac_nc = netCDF4.MFDataset(fp, 'r')
-        fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream='ECHAM5')  # daily MF. Due to EMAC restarts, files can split sub-daily
+        # fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream='ECHAM5')  # daily MF. Due to EMAC restarts, files can split sub-daily
+        fp = config.emac_dir + config.emac_file_name_template.format(date_time=date.strftime('%Y%m%d_*'), stream='WRF_bc_met')  # daily MF. Due to EMAC restarts, files can split sub-daily
         emac_df = get_emac_df(fp)
         emac_df = emac_df.sel(time=date)
 

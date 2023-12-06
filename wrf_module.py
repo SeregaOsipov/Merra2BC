@@ -95,7 +95,9 @@ def initialise(config):
     global met_files, dates, wrf_p_top, znu, xlon, xlat, nx, ny, nz, nw, boundary_lons, boundary_lats, vars, cen_lat, cen_lon, projection, dx, dy, true_lat2, true_lat1
 
     met_files = sorted([f for f in os.listdir(config.wrf_met_dir) if re.match(config.wrf_met_files, f)], key=numericalSort1)
-    wrf_bdy_nc = Dataset(config.wrf_dir + "/" + config.wrf_bdy_file, 'r')
+    wrf_bdy_fp = config.wrf_dir + "/" + config.wrf_bdy_file
+    print('wrf_bdy_fp is {}'.format(wrf_bdy_fp))
+    wrf_bdy_nc = Dataset(wrf_bdy_fp, 'r')
     for i in range(0, len(wrf_bdy_nc.variables['Times'][:]), 1):
         # wrf_times.update({''.join(wrfbddy.variables['Times'][i]):i})
         date_string = ''.join([char.decode("utf-8") for char in wrf_bdy_nc.variables['Times'][i]])
