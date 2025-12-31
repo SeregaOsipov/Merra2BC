@@ -36,7 +36,7 @@ python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --ze
 
 source /project/k10066/osipovs/.commonrc; gogomamba; mamba activate py311
 data_dir=/scratch/osipovs/Models/WRF_run/run_real
-python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/ --wrf_met_files=met_em.d01.* --wrf_met_files_date_format='%Y-%m-%d_%H:%M:%S' >& log.merra2wrf
+python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/ --wrf_met_files=met_em.d01.* --wrf_met_files_date_format=%Y-%m-%d_%H:%M:%S >& log.merra2wrf
 """
 
 #%%

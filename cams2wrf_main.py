@@ -36,6 +36,17 @@ wrf_dir=/project/k10048/Projects/AirQuality/Data/NCEC/IC_BC/MERRA2_CAMS/
 wrf_dir=/scratch/osipovs/Data/AirQuality/NCEC/IC_BC/MERRA2_CAMS
 wrf_met_dir=/scratch/osipovs/Models/WRF_run/run_real/
 python -u ${MERRA2BC}/cams2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${wrf_dir} --wrf_met_dir=${wrf_met_dir} --wrf_met_files=met_em.d01.* --wrf_met_files_date_format=%Y-%m-%d_%H:%M:%S >& log.cams2wrf
+
+Submit script on Shaheen 3
+sbatch --job-name=cams2wrf --account=k10009 --time=24:00:00 --partition=shared <<'EOT'
+#!/bin/bash -l
+source /project/k10066/osipovs/.commonrc; gogomamba; mamba activate py311
+wrf_dir=/scratch/osipovs/Data/AirQuality/NCEC/IC_BC/MERRA2_CAMS
+wrf_met_dir=/scratch/osipovs/Models/WRF_run/run_real/
+#python -u ${MERRA2BC}/cams2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${wrf_dir} --wrf_met_dir=${wrf_met_dir} --wrf_met_files=met_em.d01.* --wrf_met_files_date_format=%Y-%m-%d_%H:%M:%S >& log.cams2wrf
+python -u ${MERRA2BC}/cams2wrf_main.py --hourly_interval=3 --do_BC --zero_out_first --wrf_dir=${wrf_dir} --wrf_met_dir=${wrf_met_dir} --wrf_met_files=met_em.d01.* --wrf_met_files_date_format=%Y-%m-%d_%H:%M:%S --start_date=2021-11-28_00:00:00
+EOT
+
 """
 #%%
 parser = argparse.ArgumentParser()
