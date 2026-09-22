@@ -73,7 +73,8 @@ parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files")   #
 parser.add_argument("--wrf_input", help="use default wrfinput_d01", default='wrfinput_d01')
 parser.add_argument("--wrf_bdy_file", help="use default wrfbdy_d01", default='wrfbdy_d01')
 parser.add_argument("--wrf_met_dir", help="use default wrfbdy_d01")  # default=root_path + '/Data/AirQuality/EMME/IC_BC/met_em'
-parser.add_argument("--wrf_met_files", help="met_em file names template")  # , default='met_em.d01.2017-0*')
+# parser.add_argument("--wrf_met_files", help="met_em file names template")  # , default='met_em.d01.2017-0*')
+parser.add_argument("--wrf_met_files_name_template", help="met_em file names template", default='met_em.d01.{}.nc')
 parser.add_argument("--wrf_met_files_date_format", help="met_em file names template", default='%Y-%m-%d_%H_%M_%S')  # or '%Y-%m-%d_%H:%M:%S'
 
 parser.add_argument("--mode", "--port", "--host", help="the are only to support pycharm debugging")
@@ -147,7 +148,7 @@ if args.do_IC:
 
     donor_p_rho_hi_da = regridding_utils.hor_interpolate_3d_field_on_wrf_grid(donor_ml_ds.p_rho, wrf_ic_ds)
 
-    met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format))
+    met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format), args.wrf_met_files_name_template)
     met_fp = args.wrf_met_dir + "/" + met_file_name
     print("Opening metfile: " + met_fp)
     wrf_met_ds = xr.open_dataset(met_fp).set_coords(['XLAT_M', 'XLONG_M'])
@@ -205,7 +206,7 @@ if args.do_BC:
         donor_sfc_ds = xr_open_dataset_impl(fp).sel(time=date)
         derive_cams_pressure_profile(donor_ml_ds, donor_sfc_ds)
 
-        met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format))
+        met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format), args.wrf_met_files_name_template)
         met_fp = args.wrf_met_dir + "/" + met_file_name
         print("\tReading WRF Pressure from: {}".format(met_fp))
         wrf_met_ds = xr.open_dataset(met_fp).set_coords(['XLAT_M', 'XLONG_M'])

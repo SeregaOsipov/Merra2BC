@@ -32,11 +32,16 @@ python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --ze
 How to run NCEC 2021:
 source /project/k10066/osipovs/.commonrc; gogomamba; mamba activate py311
 data_dir=/work/mm0062/b302074/Data/AirQuality/NCEC/2021/IC_BC/
-python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/met_em/ --wrf_met_files=met_em.d01.* >& log.merra2wrf
+python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/met_em/ >& log.merra2wrf
 
 source /project/k10066/osipovs/.commonrc; gogomamba; mamba activate py311
 data_dir=/scratch/osipovs/Models/WRF_run/run_real
-python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/ --wrf_met_files=met_em.d01.* --wrf_met_files_date_format=%Y-%m-%d_%H:%M:%S >& log.merra2wrf
+python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/ --wrf_met_files_date_format=%Y-%m-%d_%H:%M:%S >& log.merra2wrf
+
+# 2026 AG War
+source /project/k10066/osipovs/.commonrc; gogomamba; mamba activate py311
+data_dir=/scratch/osipovs/Data/AirQuality/THOFA/IC_BC/2026
+python -u ${MERRA2BC}/merra2wrf_main.py --hourly_interval=3 --do_IC --do_BC --zero_out_first --wrf_dir=${data_dir} --wrf_met_dir=${data_dir}/met_em/ --wrf_met_files_name_template='met_em.d02.{}.nc'>& log.merra2wrf
 """
 
 #%%
@@ -55,7 +60,7 @@ parser.add_argument("--wrf_dir", help="folder containing WRF IC & BC files")   #
 parser.add_argument("--wrf_input", help="use default wrfinput_d01", default='wrfinput_d01')
 parser.add_argument("--wrf_bdy_file", help="use default wrfbdy_d01", default='wrfbdy_d01')
 parser.add_argument("--wrf_met_dir", help="use default wrfbdy_d01")
-parser.add_argument("--wrf_met_files", help="met_em file names template")  # , default='met_em.d01.2017-0*')
+parser.add_argument("--wrf_met_files_name_template", help="met_em file names template", default='met_em.d01.{}.nc')
 parser.add_argument("--wrf_met_files_date_format", help="met_em file names template", default='%Y-%m-%d_%H_%M_%S')  # or '%Y-%m-%d_%H:%M:%S'
 
 parser.add_argument("--mode", "--port", "--host", help="the are only to support pycharm debugging")
@@ -130,7 +135,7 @@ if args.do_IC:
 
     donor_p_rho_hi_da = regridding_utils.hor_interpolate_3d_field_on_wrf_grid(donor_ml_ds.p_rho, wrf_ic_ds)
 
-    met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format))
+    met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format), args.wrf_met_files_name_template)
     met_fp = args.wrf_met_dir + "/" + met_file_name
     print("Opening metfile: " + met_fp)
     wrf_met_ds = xr.open_dataset(met_fp).set_coords(['XLAT_M', 'XLONG_M'])
@@ -192,7 +197,7 @@ if args.do_BC:
         donor_asm_ds = xr_open_dataset_impl(fp).sel(time=date)
         donor_ml_ds['p_rho'] = donor_asm_ds.PL
 
-        met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format))
+        met_file_name = regridding_utils.get_met_file_by_time(date.strftime(args.wrf_met_files_date_format), args.wrf_met_files_name_template)
         met_fp = args.wrf_met_dir + "/" + met_file_name
         print("\tReading WRF Pressure from: {}".format(met_fp))
         wrf_met_ds = xr.open_dataset(met_fp).set_coords(['XLAT_M', 'XLONG_M'])

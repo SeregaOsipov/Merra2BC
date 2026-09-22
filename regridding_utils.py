@@ -95,8 +95,14 @@ def update_boundaries(increment_on_bnd_da, wrf_met_ds, wrfbdy_f, name, index):
     wrfbdy_f.variables[name + "_BYE"][index, :] = wrfbdy_f.variables[name + "_BYE"][index, :] + north
 
 
-def get_met_file_by_time(time):
-    return "met_em.d01." + time + ".nc"
+def get_met_file_by_time(time, met_em_name_template):
+    '''
+    :param time:
+    :param met_em_name_template: 'met_em.d01.{}.nc'
+    :return:
+    '''
+    # return "met_em.d01." + time + ".nc"
+    return met_em_name_template.format(time)
 
 
 def is_child_domain_covered_by_parent_domain(parent_domain, child_domain):
